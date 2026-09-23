@@ -1,1 +1,11 @@
-  chip.className='chip'+(lm.on?'':' off');
+  chip.innerHTML=`<span class="dot" style="background:${lm.color}"></span>${lm.label}`;
+  chip.onclick=()=>{
+    lm.on=!lm.on;
+    chip.classList.toggle('off',!lm.on);
+    if(lm.on) groups[lm.id].addTo(map); else map.removeLayer(groups[lm.id]);
+  };
+  layersEl.appendChild(chip);
+});
+</script>
+</body>
+</html>
