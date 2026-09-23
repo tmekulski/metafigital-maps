@@ -45,6 +45,7 @@
   .t-hot{background:rgba(255,84,112,.18);color:var(--red)}
   .t-pjm{background:rgba(255,176,32,.15);color:var(--amber)}
   .t-fib{background:rgba(255,106,213,.15);color:var(--fiber)}
+  .t-cand{background:rgba(0,229,255,.15);color:var(--accent)}
   .kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
   .kv:last-child{border:0}
   .kv b{color:var(--accent);font-weight:700}
@@ -77,6 +78,7 @@
   <div class="row"><span class="lg" style="background:var(--green)"></span>Retail / Solar Roof</div>
   <div class="row"><span class="lg" style="background:var(--fiber)"></span>Dark Fiber Route</div>
   <div class="row"><span class="lg" style="background:var(--red)"></span>Choke Point</div>
+  <div class="row"><span class="lg" style="background:var(--accent);border-radius:50%"></span>Candidate Node</div>
 </div>
 
 <div class="stats" id="stats"></div>
@@ -159,194 +161,18 @@ const HOTSPOTS=[
   {n:"Arcola 500kV Corridor",lat:39.0550,lng:-77.5200,sev:"High",note:"HVDC backbone landing 2032"}
 ];
 
-// ---- LAYER GROUPS ----
-const groups={};
-groups.dc=L.layerGroup().addTo(map);
-groups.sub=L.layerGroup().addTo(map);
-groups.tx=L.layerGroup().addTo(map);
-groups.ret=L.layerGroup().addTo(map);
-groups.pjm=L.layerGroup().addTo(map);
-groups.fib=L.layerGroup().addTo(map);
-groups.hot=L.layerGroup().addTo(map);
-
-function dcIcon(mw){
-  const r=mw>100?14:mw>60?11:9;
-  return L.divIcon({className:'',html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:var(--accent2);border:2px solid #fff;box-shadow:0 0 8px var(--accent2)"></div>`,iconSize:[r*2,r*2],iconAnchor:[r,r]});
-}
-function subIcon(){return L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:var(--accent);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[14,14],iconAnchor:[7,7]});}
-function pjmIcon(){return L.divIcon({className:'',html:`<div style="width:12px;height:12px;background:var(--amber);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border:1px solid #fff"></div>`,iconSize:[12,12],iconAnchor:[6,6]});}
-function retIcon(){return L.divIcon({className:'',html:`<div style="width:11px;height:11px;background:var(--green);border-radius:2px;border:1px solid #fff"></div>`,iconSize:[11,11],iconAnchor:[5,5]});}
-function fibIcon(){return L.divIcon({className:'',html:`<div style="width:10px;height:10px;background:var(--fiber);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[10,10],iconAnchor:[5,5]});}
-function hotIcon(){return L.divIcon({className:'',html:`<div style="width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid #fff;animation:pulse 1.5s infinite"></div>`,iconSize:[16,16],iconAnchor:[8,8]});}
-
-DATA_CENTERS.forEach(d=>{
-  const m=L.marker([d.lat,d.lng],{icon:dcIcon(d.mw)}).addTo(groups.dc);
-  m.bindPopup(`<div class="p-title">${d.n}</div><div class="p-row"><span>Owner</span><b>${d.o}</b></div><div class="p-row"><span>IT Load</span><b>${d.mw} MW</b></div><div class="p-row"><span>PUE</span><b>${d.pue}</b></div><div class="p-row"><span>Annual Energy</span><b>${(d.mw*8760*d.pue/1000).toFixed(0)} GWh</b></div><div class="p-row"><span>Curtailable DR</span><b>${d.dr} MW</b></div>`);
-  m.on('click',()=>openSide(d,'dc'));
-});
-SUBSTATIONS.forEach(s=>{
-  const m=L.marker([s.lat,s.lng],{icon:subIcon()}).addTo(groups.sub);
-  m.bindPopup(`<div class="p-title">${s.n}</div><div class="p-row"><span>Voltage</span><b>${s.kv} kV</b></div><div class="p-row"><span>Capacity</span><b>${s.cap} MW</b></div>`);
-  m.on('click',()=>openSide(s,'sub'));
-});
-TRANSMISSION.forEach(t=>{
-  L.polyline(t,{color:'#4aa3ff',weight:2,opacity:.6,dashArray:'6 4'}).addTo(groups.tx);
-});
-RETAIL.forEach(r=>{
-  const m=L.marker([r.lat,r.lng],{icon:retIcon()}).addTo(groups.ret);
-  m.bindPopup(`<div class="p-title">${r.n}</div><div class="p-row"><span>Anchor</span><b>${r.anchor}</b></div><div class="p-row"><span>Roof</span><b>${(r.roof/1000).toFixed(0)}k sf</b></div><div class="p-row"><span>Solar</span><b>${r.solarMw} MW</b></div><div class="p-row"><span>Gen</span><b>${r.genMwh} MWh/yr</b></div>`);
-  m.on('click',()=>openSide(r,'ret'));
-});
-PJM_QUEUE.forEach(p=>{
-  const m=L.marker([p.lat,p.lng],{icon:pjmIcon()}).addTo(groups.pjm);
-  m.bindPopup(`<div class="p-title">${p.n}</div><div class="p-row"><span>Type</span><b>${p.type}</b></div><div class="p-row"><span>Capacity</span><b>${p.mw} MW</b></div><div class="p-row"><span>Status</span><b>${p.status}</b></div><div class="p-row"><span>POI</span><b>${p.poi}</b></div>`);
-  m.on('click',()=>openSide(p,'pjm'));
-});
-FIBER.forEach(f=>{
-  const m=L.polyline([[f.lat1,f.lng1],[f.lat2,f.lng2]],{color:'#ff6ad5',weight:2.5,opacity:.7,dashArray:'2 6'}).addTo(groups.fib);
-  m.bindPopup(`<div class="p-title" style="color:var(--fiber)">${f.n}</div><div class="p-row"><span>Provider</span><b>${f.prov}</b></div><div style="margin-top:4px;color:var(--dim)">${f.note}</div>`);
-  m.on('click',()=>openSide(f,'fib'));
-});
-HOTSPOTS.forEach(h=>{
-  const m=L.marker([h.lat,h.lng],{icon:hotIcon()}).addTo(groups.hot);
-  m.bindPopup(`<div class="p-title" style="color:var(--red)">${h.n}</div><div class="p-row"><span>Severity</span><b>${h.sev}</b></div><div style="margin-top:4px;color:var(--dim)">${h.note}</div>`);
-  m.on('click',()=>openSide(h,'hot'));
-});
-
-// concentric rings
-[2,5,10].forEach((km,i)=>{
-  L.circle(CENTER,{radius:km*1000,color:i===0?'#00e5ff':'#1f2a3a',weight:1,fill:false,dashArray:i===0?'':'4 6',opacity:.5}).addTo(map);
-});
-L.circle(CENTER,{radius:500,color:'#7c5cff',weight:2,fillColor:'#7c5cff',fillOpacity:.08}).addTo(map);
-
-// ---- SIDE PANEL ----
-function openSide(d,type){
-  const side=document.getElementById('side');
-  const title=document.getElementById('sideTitle');
-  const body=document.getElementById('sideBody');
-  side.classList.add('open');
-  let tag,html='';
-  if(type==='dc'){
-    tag='<span class="tag t-dc">DATA CENTER</span>';
-    title.innerHTML=tag+d.n;
-    const annual=(d.mw*8760*d.pue/1000).toFixed(1);
-    html=`<div class="kv"><span>Owner</span><b>${d.o}</b></div>
-      <div class="kv"><span>IT Load</span><b>${d.mw} MW</b></div>
-      <div class="kv"><span>PUE</span><b>${d.pue}</b></div>
-      <div class="kv"><span>Annual Energy</span><b>${annual} GWh</b></div>
-      <div class="kv"><span>Curtailable DR</span><b class="amber">${d.dr} MW</b></div>
-      <div class="kv"><span>SREC price</span><b>$${d.srec}</b></div>
-      <div class="kv"><span>Est. SREC revenue</span><b class="green">$${(annual*1000*d.srec/1000).toFixed(0)}k/yr</b></div>
-      <div class="note">Illustrative screening values. Verify against Dominion filings and PJM queue.</div>`;
-  } else if(type==='sub'){
-    tag='<span class="tag t-sub">SUBSTATION</span>';
-    title.innerHTML=tag+d.n;
-    html=`<div class="kv"><span>Voltage</span><b>${d.kv} kV</b></div>
-      <div class="kv"><span>Capacity</span><b>${d.cap} MW</b></div>
-      <div class="note">Dominion transmission asset. Capacity is nameplate screening estimate.</div>`;
-  } else if(type==='ret'){
-    tag='<span class="tag t-ret">RETAIL</span>';
-    title.innerHTML=tag+d.n;
-    html=`<div class="kv"><span>Type</span><b>${d.type}</b></div>
-      <div class="kv"><span>Anchor</span><b>${d.anchor}</b></div>
-      <div class="kv"><span>Roof area</span><b>${(d.roof/1000).toFixed(0)}k sf</b></div>
-      <div class="kv"><span>Solar potential</span><b>${d.solarMw} MW</b></div>
-      <div class="kv"><span>Panels</span><b>${d.panels}</b></div>
-      <div class="kv"><span>Annual gen</span><b class="green">${d.genMwh} MWh</b></div>
-      <div class="note">Rooftop solar offsets grocery load; surplus eligible for VA SREC market.</div>`;
-  } else if(type==='pjm'){
-    tag='<span class="tag t-pjm">PJM QUEUE</span>';
-    title.innerHTML=tag+d.n;
-    html=`<div class="kv"><span>Type</span><b>${d.type}</b></div>
-      <div class="kv"><span>Capacity</span><b>${d.mw} MW</b></div>
-      <div class="kv"><span>Status</span><b>${d.status}</b></div>
-      <div class="kv"><span>Zone</span><b>${d.zone}</b></div>
-      <div class="kv"><span>Point of Interconnection</span><b>${d.poi}</b></div>
-      <div class="note">Representative Dominion-zone projects. Full list: PJM Data Miner 2 / ExportToXls. VA holds 1,114 projects / 114.3 GW.</div>`;
-  } else if(type==='fib'){
-    tag='<span class="tag t-fib">DARK FIBER</span>';
-    title.innerHTML=tag+d.n;
-    html=`<div class="kv"><span>Provider</span><b>${d.prov}</b></div>
-      <div style="margin-top:6px">${d.note}</div>
-      <div class="note">Ashburn has the world's highest density of dark fiber; 73+ providers citywide.</div>`;
-  } else if(type==='hot'){
-    tag='<span class="tag t-hot">CHOKE POINT</span>';
-    title.innerHTML=tag+d.n;
-    html=`<div class="kv"><span>Severity</span><b class="red">${d.sev}</b></div>
-      <div style="margin-top:6px">${d.note}</div>
-      <div class="note">Source: PJM Operating Committee, Aug 2026.</div>`;
-  }
-  body.innerHTML=html;
-}
-function closeSide(){document.getElementById('side').classList.remove('open');}
-
-// ---- LAYER TOGGLES ----
-const layerDefs=[
-  {id:'dc',label:'Data Centers',color:'var(--accent2)'},
-  {id:'sub',label:'Substations',color:'var(--accent)'},
-  {id:'tx',label:'Transmission',color:'var(--blue)'},
-  {id:'ret',label:'Retail + Solar',color:'var(--green)'},
-  {id:'pjm',label:'PJM Queue',color:'var(--amber)'},
-  {id:'fib',label:'Dark Fiber',color:'var(--fiber)'},
-  {id:'hot',label:'Choke Points',color:'var(--red)'}
+// Candidate nodes from the Control Room narrative (ASH-04, ASH-11, MAN-02)
+const CANDIDATES=[
+  {n:"ASH-04 · Ashburn East",id:"ASH-04",lat:39.0360,lng:-77.4720,composite:87,status:"Qualified",
+   grocery:92,feeder:81,waste:78,workforce:69,water:54,social:88,
+   note:"Ombudsman mandate scoped before qualification. Scout output is a recommendation, never an authorization. Advances only when Ombudsman mandate, CESGT screen and MetaCarta doctrine reconcile."},
+  {n:"ASH-11 · Ashburn West",id:"ASH-11",lat:39.0510,lng:-77.5050,composite:74,status:"Scouted",
+   grocery:70,feeder:78,waste:65,workforce:72,water:60,social:80,
+   note:"Candidate node. Awaiting Ombudsman mandate reconciliation."},
+  {n:"MAN-02 · Main Street Corridor",id:"MAN-02",lat:39.0280,lng:-77.4550,composite:61,status:"Screening",
+   grocery:55,feeder:70,waste:58,workforce:60,water:45,social:72,
+   note:"Community corridor node. Water stress and grocery proximity are the binding constraints."}
 ];
-const layerState={dc:true,sub:true,tx:true,ret:true,pjm:true,fib:true,hot:true};
-const layersEl=document.getElementById('layers');
-layerDefs.forEach(ld=>{
-  const c=document.createElement('div');
-  c.className='chip';
-  c.innerHTML=`<span class="dot" style="background:${ld.color}"></span>${ld.label}`;
-  c.onclick=()=>{
-    layerState[ld.id]=!layerState[ld.id];
-    c.classList.toggle('off',!layerState[ld.id]);
-    if(layerState[ld.id]) map.addLayer(groups[ld.id]); else map.removeLayer(groups[ld.id]);
-    updateStats();
-  };
-  layersEl.appendChild(c);
-});
 
-// ---- STATS ----
-function updateStats(){
-  const totalMw=DATA_CENTERS.reduce((a,d)=>a+d.mw,0);
-  const totalGwh=DATA_CENTERS.reduce((a,d)=>a+d.mw*8760*d.pue/1000,0);
-  const totalDr=DATA_CENTERS.reduce((a,d)=>a+d.dr,0);
-  const solarMw=RETAIL.reduce((a,r)=>a+r.solarMw,0);
-  const solarMwh=RETAIL.reduce((a,r)=>a+r.genMwh,0);
-  const pjmMw=PJM_QUEUE.reduce((a,p)=>a+p.mw,0);
-  const domQueue=70; // GW
-  const el=document.getElementById('stats');
-  el.innerHTML=`
-  <div class="card"><h4>Data Center Alley (5 mi)</h4>
-    <div class="metric"><span>Facilities</span><span>${DATA_CENTERS.length}</span></div>
-    <div class="metric"><span>Combined IT load</span><span class="amber">${totalMw} MW</span></div>
-    <div class="metric"><span>Annual energy</span><span>${totalGwh.toFixed(0)} GWh</span></div>
-    <div class="metric"><span>Curtailable DR</span><span class="green">${totalDr} MW</span></div>
-  </div>
-  <div class="card"><h4>Retail Solar Potential</h4>
-    <div class="metric"><span>Sites</span><span>${RETAIL.length}</span></div>
-    <div class="metric"><span>Solar capacity</span><span class="green">${solarMw.toFixed(1)} MW</span></div>
-    <div class="metric"><span>Annual gen</span><span>${solarMwh} MWh</span></div>
-  </div>
-  <div class="card"><h4>PJM Queue (Dominion Zone)</h4>
-    <div class="metric"><span>Sample projects</span><span>${PJM_QUEUE.length}</span></div>
-    <div class="metric"><span>Sample capacity</span><span class="amber">${pjmMw} MW</span></div>
-    <div class="metric"><span>VA total queue</span><span class="amber">114.3 GW</span></div>
-    <div class="metric"><span>DOM large-load queue</span><span class="red">${domQueue} GW</span></div>
-    <div class="metric"><span>Avg wait time</span><span class="amber">42–54 mo</span></div>
-  </div>
-  <div class="card"><h4>Dark Fiber</h4>
-    <div class="metric"><span>Routes mapped</span><span class="fiber">${FIBER.length}</span></div>
-    <div class="metric"><span>Providers citywide</span><span class="fiber">73+</span></div>
-    <div class="metric"><span>Quantum Connect pathways</span><span class="fiber">2,500</span></div>
-  </div>
-  <div class="card"><h4>Choke Points</h4>
-    <div class="metric"><span>Critical</span><span class="red">1</span></div>
-    <div class="metric"><span>High</span><span class="amber">2</span></div>
-    <div class="metric"><span>7/22 load trip</span><span class="red">3.8 GW</span></div>
-  </div>
-  <div class="note">Data is illustrative screening output. Verify against PJM Data Miner 2, Dominion SCC filings, and carrier route maps before acting.</div>`;
-}
-updateStats();
-</script>
-</body>
-</html>
+// ---- LAYER GROUPS ----
+const groups={};</script>
