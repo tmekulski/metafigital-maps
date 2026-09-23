@@ -10,7 +10,7 @@
   :root{
     --bg:#0a0e14; --panel:#0f1620; --panel2:#141d2b; --line:#1f2a3a;
     --txt:#d7e0ea; --dim:#7d8a9c; --accent:#00e5ff; --accent2:#7c5cff;
-    --green:#3ddc84; --amber:#ffb020; --red:#ff5470; --blue:#4aa3ff;
+    --green:#3ddc84; --amber:#ffb020; --red:#ff5470; --blue:#4aa3ff; --fiber:#ff6ad5;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -31,7 +31,7 @@
   .metric{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
   .metric:last-child{border:0}
   .metric span:last-child{font-weight:700;color:var(--accent)}
-  .metric .amber{color:var(--amber)} .metric .red{color:var(--red)} .metric .green{color:var(--green)} .metric .blue{color:var(--blue)}
+  .metric .amber{color:var(--amber)} .metric .red{color:var(--red)} .metric .green{color:var(--green)} .metric .blue{color:var(--blue)} .metric .fiber{color:var(--fiber)}
   .side{position:absolute;right:12px;top:60px;z-index:1000;width:340px;max-height:calc(100vh - 80px);overflow:auto;background:rgba(15,22,32,.94);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px);display:none}
   .side.open{display:block}
   .side .head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
@@ -44,6 +44,7 @@
   .t-ret{background:rgba(61,220,132,.15);color:var(--green)}
   .t-hot{background:rgba(255,84,112,.18);color:var(--red)}
   .t-pjm{background:rgba(255,176,32,.15);color:var(--amber)}
+  .t-fib{background:rgba(255,106,213,.15);color:var(--fiber)}
   .kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
   .kv:last-child{border:0}
   .kv b{color:var(--accent);font-weight:700}
@@ -57,6 +58,7 @@
   .p-title{font-weight:700;margin-bottom:4px}
   .p-row{display:flex;justify-content:space-between;gap:10px}
   .p-row b{color:var(--accent)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,84,112,.6)}70%{box-shadow:0 0 0 12px rgba(255,84,112,0)}100%{box-shadow:0 0 0 0 rgba(255,84,112,0)}}
   @media(max-width:760px){.stats,.side,.legend{width:auto;max-width:90vw}}
 </style>
 </head>
@@ -73,6 +75,7 @@
   <div class="row"><span class="lg" style="background:var(--accent)"></span>Substation</div>
   <div class="row"><span class="lg" style="background:var(--amber)"></span>PJM Queue Project</div>
   <div class="row"><span class="lg" style="background:var(--green)"></span>Retail / Solar Roof</div>
+  <div class="row"><span class="lg" style="background:var(--fiber)"></span>Dark Fiber Route</div>
   <div class="row"><span class="lg" style="background:var(--red)"></span>Choke Point</div>
 </div>
 
@@ -134,12 +137,21 @@ const RETAIL=[
   {n:"Waxpool Center",type:"Strip",anchor:"CVS",lat:39.0550,lng:-77.4600,roof:25000,solarMw:0.3,panels:600,genMwh:300}
 ];
 const PJM_QUEUE=[
-  {n:"VA-DC-Q1 Solar+Storage",type:"Solar/Storage",mw:800,lat:39.0700,lng:-77.5400,status:"Study",zone:"DOM"},
-  {n:"VA-DC-Q2 Gas Peaker",type:"Natural Gas",mw:1200,lat:39.0000,lng:-77.4400,status:"Agreement",zone:"DOM"},
-  {n:"VA-DC-Q3 Battery",type:"Storage",mw:600,lat:39.0800,lng:-77.5100,status:"Study",zone:"DOM"},
-  {n:"VA-DC-Q4 Offshore Wind",type:"Wind",mw:2640,lat:39.0900,lng:-77.5600,status:"Under construction",zone:"DOM"},
-  {n:"VA-DC-Q5 Solar Farm",type:"Solar",mw:500,lat:38.9900,lng:-77.4300,status:"Study",zone:"DOM"},
-  {n:"VA-DC-Q6 Storage",type:"Storage",mw:900,lat:39.0750,lng:-77.4950,status:"Agreement",zone:"DOM"}
+  {n:"Coastal VA Offshore Wind",type:"Offshore Wind",mw:2640,lat:39.0900,lng:-77.5600,status:"Under construction",zone:"DOM",poi:"Offshore VA"},
+  {n:"Rogers Road 500kV Gas",type:"Natural Gas",mw:1756,lat:39.0000,lng:-77.4400,status:"Regulatory approvals pending",zone:"DOM",poi:"Rogers Road 500kV"},
+  {n:"Heritage 500kV Gas",type:"Natural Gas",mw:1525,lat:39.0750,lng:-77.4950,status:"Regulatory approvals pending",zone:"DOM",poi:"Heritage 500kV"},
+  {n:"Cunningham 500kV Gas",type:"Natural Gas",mw:1000,lat:39.0300,lng:-77.4700,status:"Under construction",zone:"DOM",poi:"Cunningham 500kV"},
+  {n:"VA-DC-Q1 Solar+Storage",type:"Solar/Storage",mw:800,lat:39.0700,lng:-77.5400,status:"Study",zone:"DOM",poi:"Loudoun 500kV"},
+  {n:"VA-DC-Q3 Battery",type:"Storage",mw:600,lat:39.0800,lng:-77.5100,status:"Study",zone:"DOM",poi:"Arcola 500kV"},
+  {n:"VA-DC-Q5 Solar Farm",type:"Solar",mw:500,lat:38.9900,lng:-77.4300,status:"Study",zone:"DOM",poi:"Bull Run 230kV"},
+  {n:"VA-DC-Q6 Storage",type:"Storage",mw:900,lat:39.0550,lng:-77.5200,status:"Agreement",zone:"DOM",poi:"Arcola 500kV"}
+];
+const FIBER=[
+  {n:"SummitIG I-95 Cyber Highway",prov:"SummitIG",lat1:39.0438,lng1:-77.4874,lat2:38.8047,lng2:-77.0461,note:"170 mi dark fiber Ashburn→Richmond via I-95/I-295; 25% shorter than legacy routes"},
+  {n:"Zayo Columbus→Ashburn",prov:"Zayo",lat1:39.0438,lng1:-77.4874,lat2:39.9612,lng2:-82.9988,note:"~400 route mi lowest-latency Columbus–Ashburn; bypasses network congestion"},
+  {n:"Crown Castle Transcom",prov:"Crown Castle",lat1:39.0438,lng1:-77.4874,lat2:38.9072,lng2:-77.0369,note:"NYC→DC→VA diverse from I-95 corridor; Potomac River crossing into Ashburn"},
+  {n:"Quantum Connect Conduit",prov:"Quantum Connect",lat1:39.0438,lng1:-77.4874,lat2:39.0445,lng2:-77.4902,note:"130 mi private conduit, 2,500 pathways; 14 campus entrances to 45 data centers"},
+  {n:"Lumen Ashburn Hub",prov:"Lumen",lat1:39.0438,lng1:-77.4874,lat2:39.2904,lng2:-76.6122,note:"Next-gen 400G optical; Ashburn on-net to Baltimore/Norfolk/DC"}
 ];
 const HOTSPOTS=[
   {n:"Loudoun 500kV Congestion",lat:39.0520,lng:-77.5000,sev:"Critical",note:"230kV fault 7/22 tripped 3.8 GW DC load"},
@@ -154,6 +166,7 @@ groups.sub=L.layerGroup().addTo(map);
 groups.tx=L.layerGroup().addTo(map);
 groups.ret=L.layerGroup().addTo(map);
 groups.pjm=L.layerGroup().addTo(map);
+groups.fib=L.layerGroup().addTo(map);
 groups.hot=L.layerGroup().addTo(map);
 
 function dcIcon(mw){
@@ -163,6 +176,7 @@ function dcIcon(mw){
 function subIcon(){return L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:var(--accent);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[14,14],iconAnchor:[7,7]});}
 function pjmIcon(){return L.divIcon({className:'',html:`<div style="width:12px;height:12px;background:var(--amber);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border:1px solid #fff"></div>`,iconSize:[12,12],iconAnchor:[6,6]});}
 function retIcon(){return L.divIcon({className:'',html:`<div style="width:11px;height:11px;background:var(--green);border-radius:2px;border:1px solid #fff"></div>`,iconSize:[11,11],iconAnchor:[5,5]});}
+function fibIcon(){return L.divIcon({className:'',html:`<div style="width:10px;height:10px;background:var(--fiber);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[10,10],iconAnchor:[5,5]});}
 function hotIcon(){return L.divIcon({className:'',html:`<div style="width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid #fff;animation:pulse 1.5s infinite"></div>`,iconSize:[16,16],iconAnchor:[8,8]});}
 
 DATA_CENTERS.forEach(d=>{
@@ -185,8 +199,13 @@ RETAIL.forEach(r=>{
 });
 PJM_QUEUE.forEach(p=>{
   const m=L.marker([p.lat,p.lng],{icon:pjmIcon()}).addTo(groups.pjm);
-  m.bindPopup(`<div class="p-title">${p.n}</div><div class="p-row"><span>Type</span><b>${p.type}</b></div><div class="p-row"><span>Capacity</span><b>${p.mw} MW</b></div><div class="p-row"><span>Status</span><b>${p.status}</b></div><div class="p-row"><span>Zone</span><b>${p.zone}</b></div>`);
+  m.bindPopup(`<div class="p-title">${p.n}</div><div class="p-row"><span>Type</span><b>${p.type}</b></div><div class="p-row"><span>Capacity</span><b>${p.mw} MW</b></div><div class="p-row"><span>Status</span><b>${p.status}</b></div><div class="p-row"><span>POI</span><b>${p.poi}</b></div>`);
   m.on('click',()=>openSide(p,'pjm'));
+});
+FIBER.forEach(f=>{
+  const m=L.polyline([[f.lat1,f.lng1],[f.lat2,f.lng2]],{color:'#ff6ad5',weight:2.5,opacity:.7,dashArray:'2 6'}).addTo(groups.fib);
+  m.bindPopup(`<div class="p-title" style="color:var(--fiber)">${f.n}</div><div class="p-row"><span>Provider</span><b>${f.prov}</b></div><div style="margin-top:4px;color:var(--dim)">${f.note}</div>`);
+  m.on('click',()=>openSide(f,'fib'));
 });
 HOTSPOTS.forEach(h=>{
   const m=L.marker([h.lat,h.lng],{icon:hotIcon()}).addTo(groups.hot);
@@ -242,7 +261,14 @@ function openSide(d,type){
       <div class="kv"><span>Capacity</span><b>${d.mw} MW</b></div>
       <div class="kv"><span>Status</span><b>${d.status}</b></div>
       <div class="kv"><span>Zone</span><b>${d.zone}</b></div>
-      <div class="note">Sample of Dominion-zone queue. Full list: PJM Data Miner 2 / ExportToXls.</div>`;
+      <div class="kv"><span>Point of Interconnection</span><b>${d.poi}</b></div>
+      <div class="note">Representative Dominion-zone projects. Full list: PJM Data Miner 2 / ExportToXls. VA holds 1,114 projects / 114.3 GW.</div>`;
+  } else if(type==='fib'){
+    tag='<span class="tag t-fib">DARK FIBER</span>';
+    title.innerHTML=tag+d.n;
+    html=`<div class="kv"><span>Provider</span><b>${d.prov}</b></div>
+      <div style="margin-top:6px">${d.note}</div>
+      <div class="note">Ashburn has the world's highest density of dark fiber; 73+ providers citywide.</div>`;
   } else if(type==='hot'){
     tag='<span class="tag t-hot">CHOKE POINT</span>';
     title.innerHTML=tag+d.n;
@@ -261,9 +287,10 @@ const layerDefs=[
   {id:'tx',label:'Transmission',color:'var(--blue)'},
   {id:'ret',label:'Retail + Solar',color:'var(--green)'},
   {id:'pjm',label:'PJM Queue',color:'var(--amber)'},
+  {id:'fib',label:'Dark Fiber',color:'var(--fiber)'},
   {id:'hot',label:'Choke Points',color:'var(--red)'}
 ];
-const layerState={dc:true,sub:true,tx:true,ret:true,pjm:true,hot:true};
+const layerState={dc:true,sub:true,tx:true,ret:true,pjm:true,fib:true,hot:true};
 const layersEl=document.getElementById('layers');
 layerDefs.forEach(ld=>{
   const c=document.createElement('div');
@@ -300,30 +327,26 @@ function updateStats(){
     <div class="metric"><span>Solar capacity</span><span class="green">${solarMw.toFixed(1)} MW</span></div>
     <div class="metric"><span>Annual gen</span><span>${solarMwh} MWh</span></div>
   </div>
-  <div class="card"><h4>PJM / Dominion Queue</h4>
+  <div class="card"><h4>PJM Queue (Dominion Zone)</h4>
+    <div class="metric"><span>Sample projects</span><span>${PJM_QUEUE.length}</span></div>
+    <div class="metric"><span>Sample capacity</span><span class="amber">${pjmMw} MW</span></div>
+    <div class="metric"><span>VA total queue</span><span class="amber">114.3 GW</span></div>
     <div class="metric"><span>DOM large-load queue</span><span class="red">${domQueue} GW</span></div>
-    <div class="metric"><span>With dates thru 2031</span><span class="amber">25 GW</span></div>
-    <div class="metric"><span>Under study</span><span>45 GW</span></div>
-    <div class="metric"><span>New requests/mo</span><span>10 (2-3 GW)</span></div>
-    <div class="metric"><span>Sample queue MW</span><span class="blue">${pjmMw} MW</span></div>
+    <div class="metric"><span>Avg wait time</span><span class="amber">42–54 mo</span></div>
+  </div>
+  <div class="card"><h4>Dark Fiber</h4>
+    <div class="metric"><span>Routes mapped</span><span class="fiber">${FIBER.length}</span></div>
+    <div class="metric"><span>Providers citywide</span><span class="fiber">73+</span></div>
+    <div class="metric"><span>Quantum Connect pathways</span><span class="fiber">2,500</span></div>
   </div>
   <div class="card"><h4>Choke Points</h4>
     <div class="metric"><span>Critical</span><span class="red">1</span></div>
     <div class="metric"><span>High</span><span class="amber">2</span></div>
     <div class="metric"><span>7/22 load trip</span><span class="red">3.8 GW</span></div>
   </div>
-  <div class="card"><h4>Substations</h4>
-    <div class="metric"><span>500 kV</span><span>3</span></div>
-    <div class="metric"><span>230 kV</span><span>5</span></div>
-    <div class="metric"><span>Combined cap</span><span>${SUBSTATIONS.reduce((a,s)=>a+s.cap,0)} MW</span></div>
-  </div>`;
+  <div class="note">Data is illustrative screening output. Verify against PJM Data Miner 2, Dominion SCC filings, and carrier route maps before acting.</div>`;
 }
 updateStats();
-
-// pulse keyframe
-const st=document.createElement('style');
-st.innerHTML='@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.5}}';
-document.head.appendChild(st);
 </script>
 </body>
 </html>
