@@ -1,178 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>METAFIGITAL MAPS — Ashburn Data Center Alley</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-  :root{
-    --bg:#0a0e14; --panel:#0f1620; --panel2:#141d2b; --line:#1f2a3a;
-    --txt:#d7e0ea; --dim:#7d8a9c; --accent:#00e5ff; --accent2:#7c5cff;
-    --green:#3ddc84; --amber:#ffb020; --red:#ff5470; --blue:#4aa3ff; --fiber:#ff6ad5;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  #map{position:absolute;inset:0;z-index:1}
-  .leaflet-container{background:#0a0e14}
-  .topbar{position:absolute;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;gap:14px;padding:10px 16px;background:linear-gradient(180deg,rgba(10,14,20,.96),rgba(10,14,20,.7));border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
-  .brand{font-weight:800;letter-spacing:.5px;font-size:15px}
-  .brand b{color:var(--accent)}
-  .brand small{display:block;color:var(--dim);font-weight:500;font-size:11px;letter-spacing:1px}
-  .layers{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
-  .chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:20px;background:var(--panel);font-size:12px;cursor:pointer;user-select:none;transition:.15s}
-  .chip:hover{border-color:var(--accent)}
-  .chip.off{opacity:.4}
-  .dot{width:9px;height:9px;border-radius:50%}
-  .stats{position:absolute;left:12px;bottom:12px;z-index:1000;display:flex;flex-direction:column;gap:8px;width:300px;max-height:calc(100vh - 120px);overflow:auto}
-  .card{background:rgba(15,22,32,.92);border:1px solid var(--line);border-radius:12px;padding:12px 14px;backdrop-filter:blur(6px)}
-  .card h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim)}
-  .metric{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
-  .metric:last-child{border:0}
-  .metric span:last-child{font-weight:700;color:var(--accent)}
-  .metric .amber{color:var(--amber)} .metric .red{color:var(--red)} .metric .green{color:var(--green)} .metric .blue{color:var(--blue)} .metric .fiber{color:var(--fiber)}
-  .side{position:absolute;right:12px;top:60px;z-index:1000;width:340px;max-height:calc(100vh - 80px);overflow:auto;background:rgba(15,22,32,.94);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px);display:none}
-  .side.open{display:block}
-  .side .head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-  .side .head h3{margin:0;font-size:14px}
-  .side .x{cursor:pointer;color:var(--dim);font-size:18px}
-  .side .body{padding:12px 14px;font-size:13px;line-height:1.5}
-  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-right:4px}
-  .t-dc{background:rgba(124,92,255,.18);color:#b9a6ff}
-  .t-sub{background:rgba(0,229,255,.15);color:var(--accent)}
-  .t-ret{background:rgba(61,220,132,.15);color:var(--green)}
-  .t-hot{background:rgba(255,84,112,.18);color:var(--red)}
-  .t-pjm{background:rgba(255,176,32,.15);color:var(--amber)}
-  .t-fib{background:rgba(255,106,213,.15);color:var(--fiber)}
-  .t-cand{background:rgba(0,229,255,.15);color:var(--accent)}
-  .kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)}
-  .kv:last-child{border:0}
-  .kv b{color:var(--accent);font-weight:700}
-  .note{font-size:11px;color:var(--dim);margin-top:8px}
-  .legend{position:absolute;left:12px;top:60px;z-index:1000;background:rgba(15,22,32,.92);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.7}
-  .legend .row{display:flex;align-items:center;gap:6px}
-  .lg{width:10px;height:10px;border-radius:2px}
-  .leaflet-popup-content-wrapper{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px}
-  .leaflet-popup-tip{background:var(--panel)}
-  .leaflet-popup-content{margin:10px 12px;font-size:12px;line-height:1.4}
-  .p-title{font-weight:700;margin-bottom:4px}
-  .p-row{display:flex;justify-content:space-between;gap:10px}
-  .p-row b{color:var(--accent)}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,84,112,.6)}70%{box-shadow:0 0 0 12px rgba(255,84,112,0)}100%{box-shadow:0 0 0 0 rgba(255,84,112,0)}}
-  @media(max-width:760px){.stats,.side,.legend{width:auto;max-width:90vw}}
-</style>
-</head>
-<body>
-<div id="map"></div>
-
-<div class="topbar">
-  <div class="brand">METAFIGITAL<b> MAPS</b><small>MODULAR ADAPTIVE POWER SITING · ASHBURN ALLEY</small></div>
-  <div class="layers" id="layers"></div>
-</div>
-
-<div class="legend" id="legend">
-  <div class="row"><span class="lg" style="background:var(--accent2)"></span>Data Center</div>
-  <div class="row"><span class="lg" style="background:var(--accent)"></span>Substation</div>
-  <div class="row"><span class="lg" style="background:var(--amber)"></span>PJM Queue Project</div>
-  <div class="row"><span class="lg" style="background:var(--green)"></span>Retail / Solar Roof</div>
-  <div class="row"><span class="lg" style="background:var(--fiber)"></span>Dark Fiber Route</div>
-  <div class="row"><span class="lg" style="background:var(--red)"></span>Choke Point</div>
-  <div class="row"><span class="lg" style="background:var(--accent);border-radius:50%"></span>Candidate Node</div>
-</div>
-
-<div class="stats" id="stats"></div>
-<div class="side" id="side"><div class="head"><h3 id="sideTitle">Details</h3><span class="x" onclick="closeSide()">×</span></div><div class="body" id="sideBody"></div></div>
-
-<script>
-const CENTER=[39.0438,-77.4874];
-const map=L.map('map',{zoomControl:true}).setView(CENTER,12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-  attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19
-}).addTo(map);
-
-// ---- DATA LAYERS ----
-const DATA_CENTERS=[
-  {n:"Digital Realty Ashburn 1",o:"Digital Realty",mw:120,pue:1.25,lat:39.0445,lng:-77.4902,dr:18,srec:33.2},
-  {n:"Equinix DC2",o:"Equinix",mw:95,pue:1.30,lat:39.0410,lng:-77.4850,dr:14,srec:31.5},
-  {n:"AWS us-east-1a",o:"Amazon",mw:180,pue:1.20,lat:39.0460,lng:-77.4920,dr:30,srec:35.0},
-  {n:"Microsoft Azure East",o:"Microsoft",mw:140,pue:1.22,lat:39.0380,lng:-77.4800,dr:22,srec:33.0},
-  {n:"Google Cloud N.VA",o:"Google",mw:110,pue:1.18,lat:39.0500,lng:-77.4950,dr:16,srec:32.0},
-  {n:"CoreSite VA1",o:"CoreSite",mw:60,pue:1.35,lat:39.0420,lng:-77.4880,dr:9,srec:30.0},
-  {n:"QTS Ashburn",o:"QTS",mw:85,pue:1.28,lat:39.0455,lng:-77.4830,dr:12,srec:31.0},
-  {n:"Switch SUPERNAP",o:"Switch",mw:70,pue:1.32,lat:39.0400,lng:-77.4910,dr:10,srec:30.5},
-  {n:"CyrusOne Ashburn",o:"CyrusOne",mw:55,pue:1.33,lat:39.0470,lng:-77.4870,dr:8,srec:29.5},
-  {n:"Iron Mountain VA",o:"Iron Mountain",mw:40,pue:1.40,lat:39.0360,lng:-77.4780,dr:6,srec:28.0},
-  {n:"EdgeConneX Ashburn",o:"EdgeConneX",mw:50,pue:1.34,lat:39.0490,lng:-77.4900,dr:7,srec:29.0},
-  {n:"Flexential Ashburn",o:"Flexential",mw:45,pue:1.36,lat:39.0430,lng:-77.4820,dr:6,srec:28.5},
-  {n:"DataBank Ashburn",o:"DataBank",mw:35,pue:1.38,lat:39.0415,lng:-77.4930,dr:5,srec:27.5},
-  {n:"STACK Infrastructure",o:"STACK",mw:65,pue:1.29,lat:39.0480,lng:-77.4860,dr:9,srec:30.0},
-  {n:"Vantage Ashburn",o:"Vantage",mw:90,pue:1.24,lat:39.0440,lng:-77.4940,dr:13,srec:32.5}
-];
-const SUBSTATIONS=[
-  {n:"Loudoun 500kV",kv:500,lat:39.0520,lng:-77.5000,cap:3200},
-  {n:"Brambleton 230kV",kv:230,lat:39.0300,lng:-77.4700,cap:900},
-  {n:"Beaumeade 230kV",kv:230,lat:39.0600,lng:-77.5100,cap:750},
-  {n:"Sterling Park 230kV",kv:230,lat:39.0200,lng:-77.4600,cap:600},
-  {n:"Arcola 500kV",kv:500,lat:39.0550,lng:-77.5200,cap:2800},
-  {n:"Bull Run 230kV",kv:230,lat:39.0100,lng:-77.4500,cap:500},
-  {n:"Herndon 230kV",kv:230,lat:39.0650,lng:-77.4750,cap:650},
-  {n:"Woodburn 500kV",kv:500,lat:39.0700,lng:-77.5300,cap:3500}
-];
-const TRANSMISSION=[
-  [[39.0520,-77.5000],[39.0550,-77.5200]],
-  [[39.0520,-77.5000],[39.0300,-77.4700]],
-  [[39.0550,-77.5200],[39.0700,-77.5300]],
-  [[39.0300,-77.4700],[39.0200,-77.4600]],
-  [[39.0600,-77.5100],[39.0520,-77.5000]],
-  [[39.0650,-77.4750],[39.0520,-77.5000]],
-  [[39.0100,-77.4500],[39.0300,-77.4700]]
-];
-const RETAIL=[
-  {n:"Ashburn Farm Market Center",type:"Grocery-anchored",anchor:"Giant",lat:39.0410,lng:-77.4780,roof:110000,solarMw:1.5,panels:3000,genMwh:1500},
-  {n:"One Loudoun",type:"Mixed-use",anchor:"Wegmans",lat:39.0580,lng:-77.5050,roof:90000,solarMw:1.2,panels:2400,genMwh:1200},
-  {n:"Ashburn Village Center",type:"Strip",anchor:"Harris Teeter",lat:39.0450,lng:-77.4850,roof:60000,solarMw:0.8,panels:1600,genMwh:800},
-  {n:"Belmont Ridge Shopping",type:"Strip",anchor:"Safeway",lat:39.0350,lng:-77.4650,roof:45000,solarMw:0.6,panels:1200,genMwh:600},
-  {n:"Loudoun Valley Center",type:"Power center",anchor:"Target",lat:39.0500,lng:-77.4700,roof:120000,solarMw:1.6,panels:3200,genMwh:1600},
-  {n:"Farmwell Hunt Plaza",type:"Strip",anchor:"Trader Joe's",lat:39.0620,lng:-77.4900,roof:35000,solarMw:0.45,panels:900,genMwh:450},
-  {n:"Russell Branch Plaza",type:"Strip",anchor:"Aldi",lat:39.0280,lng:-77.4800,roof:30000,solarMw:0.4,panels:800,genMwh:400},
-  {n:"Waxpool Center",type:"Strip",anchor:"CVS",lat:39.0550,lng:-77.4600,roof:25000,solarMw:0.3,panels:600,genMwh:300}
-];
-const PJM_QUEUE=[
-  {n:"Coastal VA Offshore Wind",type:"Offshore Wind",mw:2640,lat:39.0900,lng:-77.5600,status:"Under construction",zone:"DOM",poi:"Offshore VA"},
-  {n:"Rogers Road 500kV Gas",type:"Natural Gas",mw:1756,lat:39.0000,lng:-77.4400,status:"Regulatory approvals pending",zone:"DOM",poi:"Rogers Road 500kV"},
-  {n:"Heritage 500kV Gas",type:"Natural Gas",mw:1525,lat:39.0750,lng:-77.4950,status:"Regulatory approvals pending",zone:"DOM",poi:"Heritage 500kV"},
-  {n:"Cunningham 500kV Gas",type:"Natural Gas",mw:1000,lat:39.0300,lng:-77.4700,status:"Under construction",zone:"DOM",poi:"Cunningham 500kV"},
-  {n:"VA-DC-Q1 Solar+Storage",type:"Solar/Storage",mw:800,lat:39.0700,lng:-77.5400,status:"Study",zone:"DOM",poi:"Loudoun 500kV"},
-  {n:"VA-DC-Q3 Battery",type:"Storage",mw:600,lat:39.0800,lng:-77.5100,status:"Study",zone:"DOM",poi:"Arcola 500kV"},
-  {n:"VA-DC-Q5 Solar Farm",type:"Solar",mw:500,lat:38.9900,lng:-77.4300,status:"Study",zone:"DOM",poi:"Bull Run 230kV"},
-  {n:"VA-DC-Q6 Storage",type:"Storage",mw:900,lat:39.0550,lng:-77.5200,status:"Agreement",zone:"DOM",poi:"Arcola 500kV"}
-];
-const FIBER=[
-  {n:"SummitIG I-95 Cyber Highway",prov:"SummitIG",lat1:39.0438,lng1:-77.4874,lat2:38.8047,lng2:-77.0461,note:"170 mi dark fiber Ashburn→Richmond via I-95/I-295; 25% shorter than legacy routes"},
-  {n:"Zayo Columbus→Ashburn",prov:"Zayo",lat1:39.0438,lng1:-77.4874,lat2:39.9612,lng2:-82.9988,note:"~400 route mi lowest-latency Columbus–Ashburn; bypasses network congestion"},
-  {n:"Crown Castle Transcom",prov:"Crown Castle",lat1:39.0438,lng1:-77.4874,lat2:38.9072,lng2:-77.0369,note:"NYC→DC→VA diverse from I-95 corridor; Potomac River crossing into Ashburn"},
-  {n:"Quantum Connect Conduit",prov:"Quantum Connect",lat1:39.0438,lng1:-77.4874,lat2:39.0445,lng2:-77.4902,note:"130 mi private conduit, 2,500 pathways; 14 campus entrances to 45 data centers"},
-  {n:"Lumen Ashburn Hub",prov:"Lumen",lat1:39.0438,lng1:-77.4874,lat2:39.2904,lng2:-76.6122,note:"Next-gen 400G optical; Ashburn on-net to Baltimore/Norfolk/DC"}
-];
-const HOTSPOTS=[
-  {n:"Loudoun 500kV Congestion",lat:39.0520,lng:-77.5000,sev:"Critical",note:"230kV fault 7/22 tripped 3.8 GW DC load"},
-  {n:"Brambleton Interconnect",lat:39.0300,lng:-77.4700,sev:"High",note:"Queue backlog 42-54 mo wait"},
-  {n:"Arcola 500kV Corridor",lat:39.0550,lng:-77.5200,sev:"High",note:"HVDC backbone landing 2032"}
-];
-
-// Candidate nodes from the Control Room narrative (ASH-04, ASH-11, MAN-02)
-const CANDIDATES=[
-  {n:"ASH-04 · Ashburn East",id:"ASH-04",lat:39.0360,lng:-77.4720,composite:87,status:"Qualified",
-   grocery:92,feeder:81,waste:78,workforce:69,water:54,social:88,
-   note:"Ombudsman mandate scoped before qualification. Scout output is a recommendation, never an authorization. Advances only when Ombudsman mandate, CESGT screen and MetaCarta doctrine reconcile."},
-  {n:"ASH-11 · Ashburn West",id:"ASH-11",lat:39.0510,lng:-77.5050,composite:74,status:"Scouted",
-   grocery:70,feeder:78,waste:65,workforce:72,water:60,social:80,
-   note:"Candidate node. Awaiting Ombudsman mandate reconciliation."},
-  {n:"MAN-02 · Main Street Corridor",id:"MAN-02",lat:39.0280,lng:-77.4550,composite:61,status:"Screening",
-   grocery:55,feeder:70,waste:58,workforce:60,water:45,social:72,
-   note:"Community corridor node. Water stress and grocery proximity are the binding constraints."}
-];
+const groups={};</script>
 
 // ---- LAYER GROUPS ----
-const groups={};</script>
+groups.dc=L.layerGroup().addTo(map);
+groups.sub=L.layerGroup().addTo(map);
+groups.tx=L.layerGroup().addTo(map);
+groups.ret=L.layerGroup().addTo(map);
+groups.pjm=L.layerGroup().addTo(map);
+groups.fib=L.layerGroup().addTo(map);
+groups.hot=L.layerGroup().addTo(map);
+groups.cand=L.layerGroup().addTo(map);
+
+function dcIcon(mw){
+  const r=mw>100?14:mw>60?11:9;
+  return L.divIcon({className:'',html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:var(--accent2);border:2px solid #fff;box-shadow:0 0 8px var(--accent2)"></div>`,iconSize:[r*2,r*2],iconAnchor:[r,r]});
+}
+function subIcon(){return L.divIcon({className:'',html:`<div style="width:14px;height:14px;background:var(--accent);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[14,14],iconAnchor:[7,7]});}
+function pjmIcon(){return L.divIcon({className:'',html:`<div style="width:12px;height:12px;background:var(--amber);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border:1px solid #fff"></div>`,iconSize:[12,12],iconAnchor:[6,6]});}
+function retIcon(){return L.divIcon({className:'',html:`<div style="width:11px;height:11px;background:var(--green);border-radius:2px;border:1px solid #fff"></div>`,iconSize:[11,11],iconAnchor:[5,5]});}
+function fibIcon(){return L.divIcon({className:'',html:`<div style="width:10px;height:10px;background:var(--fiber);transform:rotate(45deg);border:1px solid #fff"></div>`,iconSize:[10,10],iconAnchor:[5,5]});}
+function hotIcon(){return L.divIcon({className:'',html:`<div style="width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid #fff;animation:pulse 1.5s infinite"></div>`,iconSize:[16,16],iconAnchor:[8,8]});}
+function candIcon(status){
+  const col=status==='Qualified'?'#00e5ff':status==='Scouted'?'#7c5cff':'#7d8a9c';
+  return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:transparent;border:2px solid ${col};box-shadow:0 0 10px ${col}"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
+}
+
+DATA_CENTERS.forEach(d=>{
+  const m=L.marker([d.lat,d.lng],{icon:dcIcon(d.mw)}).addTo(groups.dc);
+  m.bindPopup(`<div class="p-title">${d.n}</div><div class="p-row"><span>Owner</span><b>${d.o}</b></div><div class="p-row"><span>IT Load</span><b>${d.mw} MW</b></div><div class="p-row"><span>PUE</span><b>${d.pue}</b></div><div class="p-row"><span>Annual Energy</span><b>${(d.mw*8760*d.pue/1000).toFixed(0)} GWh</b></div><div class="p-row"><span>Curtailable DR</span><b>${d.dr} MW</b></div>`);
+  m.on('click',()=>openSide(d,'dc'));
+});
+SUBSTATIONS.forEach(s=>{
+  const m=L.marker([s.lat,s.lng],{icon:subIcon()}).addTo(groups.sub);
+  m.bindPopup(`<div class="p-title">${s.n}</div><div class="p-row"><span>Voltage</span><b>${s.kv} kV</b></div><div class="p-row"><span>Capacity</span><b>${s.cap} MW</b></div>`);
+  m.on('click',()=>openSide(s,'sub'));
+});
+TRANSMISSION.forEach(t=>{
+  L.polyline(t,{color:'#4aa3ff',weight:2,opacity:.6,dashArray:'6 4'}).addTo(groups.tx);
+});
+RETAIL.forEach(r=>{
+  const m=L.marker([r.lat,r.lng],{icon:retIcon()}).addTo(groups.ret);
+  m.bindPopup(`<div class="p-title">${r.n}</div><div class="p-row"><span>Anchor</span><b>${r.anchor}</b></div><div class="p-row"><span>Roof</span><b>${(r.roof/1000).toFixed(0)}k sf</b></div><div class="p-row"><span>Solar</span><b>${r.solarMw} MW</b></div><div class="p-row"><span>Gen</span><b>${r.genMwh} MWh/yr</b></div>`);
+  m.on('click',()=>openSide(r,'ret'));
+});
+PJM_QUEUE.forEach(p=>{
+  const m=L.marker([p.lat,p.lng],{icon:pjmIcon()}).addTo(groups.pjm);
+  m.bindPopup(`<div class="p-title">${p.n}</div><div class="p-row"><span>Type</span><b>${p.type}</b></div><div class="p-row"><span>Capacity</span><b>${p.mw} MW</b></div><div class="p-row"><span>Status</span><b>${p.status}</b></div><div class="p-row"><span>POI</span><b>${p.poi}</b></div>`);
+  m.on('click',()=>openSide(p,'pjm'));
+});
+FIBER.forEach(f=>{
+  const m=L.polyline([[f.lat1,f.lng1],[f.lat2,f.lng2]],{color:'#ff6ad5',weight:2.5,opacity:.7,dashArray:'2 6'}).addTo(groups.fib);
+  m.bindPopup(`<div class="p-title" style="color:var(--fiber)">${f.n}</div><div class="p-row"><span>Provider</span><b>${f.prov}</b></div><div style="margin-top:4px;color:var(--dim)">${f.note}</div>`);
+  m.on('click',()=>openSide(f,'fib'));
+});
+HOTSPOTS.forEach(h=>{
+  const m=L.marker([h.lat,h.lng],{icon:hotIcon()}).addTo(groups.hot);
+  m.bindPopup(`<div class="p-title" style="color:var(--red)">${h.n}</div><div class="p-row"><span>Severity</span><b>${h.sev}</b></div><div style="margin-top:4px;color:var(--dim)">${h.note}</div>`);
+  m.on('click',()=>openSide(h,'hot'));
+});
+CANDIDATES.forEach(c=>{
+  const m=L.marker([c.lat,c.lng],{icon:candIcon(c.status)}).addTo(groups.cand);
+  m.bindPopup(`<div class="p-title" style="color:var(--accent)">${c.n}</div><div class="p-row"><span>Composite fit</span><b>${c.composite}</b></div><div class="p-row"><span>Status</span><b>${c.status}</b></div>`);
+  m.on('click',()=>openSide(c,'cand'));
+});
+
+// concentric rings
+[2,5,10].forEach((km,i)=>{
+  L.circle(CENTER,{radius:km*1000,color:i===0?'#00e5ff':'#1f2a3a',weight:1,fill:false,dashArray:i===0?'':'4 6',opacity:.5}).addTo(map);
+});
+L.circle(CENTER,{radius:500,color:'#7c5cff',weight:2,fillColor:'#7c5cff',fillOpacity:.08}).addTo(map);
+
+// ---- SIDE PANEL ----
+function openSide(d,type){
+  const side=document.getElementById('side');
